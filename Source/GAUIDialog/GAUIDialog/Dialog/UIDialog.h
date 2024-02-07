@@ -1,8 +1,8 @@
-// Copyright (C) 2024 owoDra
+﻿// Copyright (C) 2024 owoDra
 
 #pragma once
 
-#include "CommonActivatableWidget.h"
+#include "Foundation/ActivatableWidget.h"
 
 #include "Type/UIDialogTypes.h"
 
@@ -51,7 +51,7 @@ public:
  * Base class for displayed dialogs
  */
 UCLASS(Abstract)
-class GAUIDIALOG_API UUIDialog : public UCommonActivatableWidget
+class GAUIDIALOG_API UUIDialog : public UActivatableWidget
 {
 	GENERATED_BODY()	
 public:

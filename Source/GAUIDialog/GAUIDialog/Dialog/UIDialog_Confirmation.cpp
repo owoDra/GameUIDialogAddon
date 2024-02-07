@@ -1,4 +1,4 @@
-// Copyright (C) 2024 owoDra
+﻿// Copyright (C) 2024 owoDra
 
 #include "UIDialog_Confirmation.h"
 
@@ -12,24 +12,10 @@
 #include "Components/DynamicEntryBox.h"
 #include "Components/SlateWrapperTypes.h"
 #include "ICommonInputModule.h"
+#include "CommonInputSettings.h"
 #include "Input/Reply.h"
 
-#if WITH_EDITOR
-#include "Editor/WidgetCompilerLog.h"
-#endif
-
 #include UE_INLINE_GENERATED_CPP_BY_NAME(UIDialog_Confirmation)
-
-
-#if WITH_EDITOR
-void UUIDialog_Confirmation::ValidateCompiledDefaults(IWidgetCompilerLog& CompileLog) const
-{
-	if (CancelAction.IsNull())
-	{
-		CompileLog.Error(FText::Format(FText::FromString(TEXT("{0} has unset property: CancelAction.")), FText::FromString(GetName())));
-	}
-}
-#endif
 
 
 void UUIDialog_Confirmation::NativeOnInitialized()
@@ -40,11 +26,8 @@ void UUIDialog_Confirmation::NativeOnInitialized()
 }
 
 
-
 void UUIDialog_Confirmation::SetupDialog(UUIDialogDescriptor* Descriptor, FDialogMessageResultDelegate ResultCallback)
 {
-	Super::SetupDialog(Descriptor, ResultCallback);
-
 	Text_Title->SetText(Descriptor->Header);
 	RichText_Description->SetText(Descriptor->Body);
 
@@ -57,31 +40,62 @@ void UUIDialog_Confirmation::SetupDialog(UUIDialogDescriptor* Descriptor, FDialo
 
 	for (const auto& Action : Descriptor->ButtonActions)
 	{
-		FDataTableRowHandle ActionRow;
-
-		switch(Action.Result)
+		if (ICommonInputModule::GetSettings().IsEnhancedInputSupportEnabled())
 		{
-		case EDialogMessageResult::Confirmed:
-			ActionRow = ICommonInputModule::GetSettings().GetDefaultClickAction();
-			break;
+			UInputAction* InputAction{ nullptr };
 
-		case EDialogMessageResult::Declined:
-			ActionRow = ICommonInputModule::GetSettings().GetDefaultBackAction();
-			break;
+			switch (Action.Result)
+			{
+			case EDialogMessageResult::Confirmed:
+				InputAction = ICommonInputModule::GetSettings().GetEnhancedInputClickAction();
+				break;
 
-		case EDialogMessageResult::Cancelled:
-			ActionRow = CancelAction;
-			break;
+			case EDialogMessageResult::Declined:
+				InputAction = ICommonInputModule::GetSettings().GetEnhancedInputBackAction();
+				break;
 
-		default:
-			UE_LOG(LogGameExt_UI, Warning, TEXT("Invalid DialogMessageResult type has set"));
-			continue;
+			case EDialogMessageResult::Cancelled:
+				InputAction = CancelInputAction.IsValid() ? CancelInputAction.Get() : CancelInputAction.LoadSynchronous();
+				break;
+
+			default:
+				UE_LOG(LogGameExt_UI, Warning, TEXT("Invalid DialogMessageResult type has set"));
+				continue;
+			}
+
+			auto* Button{ EntryBox_Buttons->CreateEntry<UButtonWidget>() };
+			Button->SetTriggeringEnhancedInputAction(InputAction);
+			Button->OnClicked().AddUObject(this, &ThisClass::CloseConfirmationWindow, Action.Result);
+			Button->SetButtonText(Action.OptionalDisplayText);
 		}
+		else
+		{
+			FDataTableRowHandle ActionRow;
 
-		auto* Button{ EntryBox_Buttons->CreateEntry<UButtonWidget>() };
-		Button->SetTriggeringInputAction(ActionRow);
-		Button->OnClicked().AddUObject(this, &ThisClass::CloseConfirmationWindow, Action.Result);
-		Button->SetButtonText(Action.OptionalDisplayText);
+			switch (Action.Result)
+			{
+			case EDialogMessageResult::Confirmed:
+				ActionRow = ICommonInputModule::GetSettings().GetDefaultClickAction();
+				break;
+
+			case EDialogMessageResult::Declined:
+				ActionRow = ICommonInputModule::GetSettings().GetDefaultBackAction();
+				break;
+
+			case EDialogMessageResult::Cancelled:
+				ActionRow = CancelAction;
+				break;
+
+			default:
+				UE_LOG(LogGameExt_UI, Warning, TEXT("Invalid DialogMessageResult type has set"));
+				continue;
+			}
+
+			auto* Button{ EntryBox_Buttons->CreateEntry<UButtonWidget>() };
+			Button->SetTriggeringInputAction(ActionRow);
+			Button->OnClicked().AddUObject(this, &ThisClass::CloseConfirmationWindow, Action.Result);
+			Button->SetButtonText(Action.OptionalDisplayText);
+		}
 	}
 
 	OnResultCallback = ResultCallback;
@@ -89,7 +103,6 @@ void UUIDialog_Confirmation::SetupDialog(UUIDialogDescriptor* Descriptor, FDialo
 
 void UUIDialog_Confirmation::KillDialog()
 {
-	Super::KillDialog();
 }
 
 

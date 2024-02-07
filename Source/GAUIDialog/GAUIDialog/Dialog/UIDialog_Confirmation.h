@@ -1,4 +1,4 @@
-// Copyright (C) 2024 owoDra
+﻿// Copyright (C) 2024 owoDra
 
 #pragma once
 
@@ -10,6 +10,7 @@ class UCommonTextBlock;
 class UCommonRichTextBlock;
 class UDynamicEntryBox;
 class UCommonBorder;
+class UInputAction;
 
 
 /**
@@ -21,10 +22,6 @@ class GAUIDIALOG_API UUIDialog_Confirmation : public UUIDialog
 	GENERATED_BODY()
 public:
 	UUIDialog_Confirmation() {}
-
-#if WITH_EDITOR
-	virtual void ValidateCompiledDefaults(IWidgetCompilerLog& CompileLog) const override;
-#endif
 
 private:
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true, BindWidget))
@@ -41,6 +38,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, meta = (RowType = "/Script/CommonUI.CommonInputActionDataBase"))
 	FDataTableRowHandle CancelAction;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSoftObjectPtr<UInputAction>CancelInputAction;
 
 
 protected:

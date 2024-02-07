@@ -1,4 +1,4 @@
-// Copyright (C) 2024 owoDra
+﻿// Copyright (C) 2024 owoDra
 
 using UnrealBuildTool;
 
@@ -34,7 +34,7 @@ public class GAUIDialog : ModuleRules
             {
                 "DeveloperSettings",
 
-                "InputCore", "CommonInput", 
+                "InputCore", "EnhancedInput", "CommonInput", 
             }
         );
     }
